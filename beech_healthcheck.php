@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Beech Healthcheck Collector
  * Description: Collects health data from remote WordPress sites and logs it for monitoring.
- * Version: 0.1.0
+ * Version: 0.1
  * Author: Josh Wayman | Beech Agency
  * Author URI: https://beech.agency
  */
