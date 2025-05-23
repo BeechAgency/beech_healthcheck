@@ -12,9 +12,22 @@ define('BHC_OPTION_SITES', 'bhc_sites');
 define('BHC_OPTION_WEBHOOK', 'bhc_webhook_url');
 define('BHC_TABLE_NAME', $GLOBALS['wpdb']->prefix . 'bhc_site_data');
 
+
+if( ! class_exists( 'BEECH_Updater' ) ){
+	include_once( plugin_dir_path( __FILE__ ) . 'updater.php' );
+}
+
+$updater = new BEECH_Updater( __FILE__ );
+$updater->set_username( 'BeechAgency' );
+$updater->set_repository( 'beech_healthcheck' );
+/*
+	$updater->authorize( 'abcdefghijk1234567890' ); // Your auth code goes here for private repos
+*/
+$updater->initialize();
+
 require 'lumberjack.php';
 
-$logger = new Beech_Lumberack();
+//$logger = new Beech_Lumberack();
 //$logger->log('Lumberjack Activated!');
 
 // ==== Plugin Activation: Create DB Table + Schedule Cron ====
