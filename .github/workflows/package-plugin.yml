@@ -1,0 +1,29 @@
+name: Package WordPress Plugin
+
+on:
+  push:
+    tags:
+      - '*'  # Triggers on all tag pushes (e.g. v1.0.0)
+
+jobs:
+  build-and-release:
+    name: Zip and upload plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Prepare clean zip folder
+        run: |
+          mkdir beech_healthcheck
+          shopt -s extglob
+          cp -r !(beech_healthcheck|.git|.github) beech_healthcheck/
+          zip -r beech_healthcheck.zip beech_healthcheck
+
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: beech_healthcheck.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
