@@ -296,10 +296,17 @@ function bhc_fetch_all_sites() {
 
         //Beech_Lumberack::quick_log("Fetching healthcheck data from ". print_r($url, true));
 
-        $response = wp_remote_get($url, ['timeout' => 15]);
+        $response = wp_remote_get($url, 
+            [
+                'headers' => [
+                    'Cache-Control' => 'no-cache',
+                    'Pragma' => 'no-cache',
+                ],
+                'timeout' => 15
+            ]);
 
         if (is_wp_error($response)) {
-            Beech_Lumberack::quick_log("Response FAILED v1 ". print_r($response->get_error_message(), true)); 
+            //Beech_Lumberack::quick_log("Response FAILED v1 ". print_r($response->get_error_message(), true)); 
             error_log("[BHC] Failed to fetch $site_url: " . $response->get_error_message());
 
             $batch_alerts[] = [
@@ -361,8 +368,8 @@ function bhc_fetch_all_sites() {
             $latest = $rows[0];
             $previous = $rows[1];
 
-            $theme_diff = 5; //$latest->themes_installed - $previous->themes_installed;
-            $plugin_diff = 11;// $latest->plugins_installed - $previous->plugins_installed;
+            $theme_diff = $latest->themes_installed - $previous->themes_installed;
+            $plugin_diff = $latest->plugins_installed - $previous->plugins_installed;
             $admin_diff = $latest->users_admin - $previous->users_admin;
 
             if ($theme_diff > 0 || $plugin_diff > 0 || $admin_diff > 0) {
