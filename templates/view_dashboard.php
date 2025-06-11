@@ -1,6 +1,7 @@
 <?php 
 global $wpdb;
 
+/*
 $latest = $wpdb->get_results(
     "SELECT * FROM " . BHC_TABLE_NAME . " a
      INNER JOIN (
@@ -9,8 +10,19 @@ $latest = $wpdb->get_results(
        GROUP BY site_url
      ) b ON a.site_url = b.site_url AND a.timestamp = b.max_ts
      ORDER BY a.site_url"
-);
+);*/
 
+$latest = $wpdb->get_results("
+    SELECT *
+    FROM (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY site_url ORDER BY timestamp DESC) AS rn
+        FROM " . BHC_TABLE_NAME . "
+    ) x
+    WHERE rn = 1
+    ORDER BY site_url
+");
+
+/*
 $previous_data = $wpdb->get_results(
     "SELECT site_url,
             MAX(themes_installed) AS max_themes_installed,
@@ -25,6 +37,21 @@ $previous_data = $wpdb->get_results(
        )
      GROUP BY site_url"
 );
+*/
+
+$previous_data = $wpdb->get_results("
+    SELECT site_url,
+           themes_installed AS max_themes_installed,
+           plugins_installed AS max_plugins_installed,
+           users_admin AS max_users_admin
+    FROM (
+        SELECT *,
+               ROW_NUMBER() OVER (PARTITION BY site_url ORDER BY timestamp DESC) AS rn
+        FROM " . BHC_TABLE_NAME . "
+        WHERE timestamp >= DATE_SUB(NOW(), INTERVAL 24 HOUR)
+    ) x
+    WHERE rn = 2
+");
 
 $previous = [];
 foreach ($previous_data as $row) {
