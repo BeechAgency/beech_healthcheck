@@ -77,7 +77,12 @@ class BEECH_Updater {
             if( $checked = $transient->checked ) { // Did Wordpress check for updates?
                 $this->get_repository_info(); // Get the repo info
 
-                $out_of_date = version_compare( $this->github_response['tag_name'], $checked[ $this->basename ], 'gt' ); // Check if we're out of date
+                $basename = $this->basename;
+
+                $out_of_date = version_compare( 
+                    $this->github_response['tag_name'], 
+                    $checked[ $this->basename ], 
+                    'gt' ); // Check if we're out of date
 
                 if( $out_of_date ) {
 

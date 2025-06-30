@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Beech Healthcheck Collector
  * Description: Collects health data from remote WordPress sites and logs it for monitoring.
- * Version: 0.3
+ * Version: 0.4
  * Author: Josh Wayman | Beech Agency
  * Author URI: https://beech.agency
  */
@@ -155,14 +155,7 @@ class Beech_Healthcheck {
             $token = $site['token'];
             $url = rtrim($site_url, '/') . '/wp-json/beech/v1/health?token=' . urlencode($token);
 
-            $response = wp_remote_get($url, 
-                [
-                    'headers' => [
-                        'Cache-Control' => 'no-cache',
-                        'Pragma' => 'no-cache',
-                    ],
-                    'timeout' => 15
-                ]);
+            $response = $this->fetch_with_retry($url, 30);
 
             if (is_wp_error($response)) {
                 error_log("[BHC] Failed to fetch $site_url: " . $response->get_error_message());
@@ -283,7 +276,35 @@ class Beech_Healthcheck {
             'body' => wp_json_encode($payload),
         ]);
     }
+
+    /**
+     * Fetch a URL with retry on cURL error 28.
+     *
+     * @param string $url
+     * @param int $timeout
+     * @return array|WP_Error
+     */
+    private function fetch_with_retry($url, $timeout = 30) {
+        $args = [
+            'headers' => [
+                'Cache-Control' => 'no-cache',
+                'Pragma' => 'no-cache',
+            ],
+            'timeout' => $timeout
+        ];
+
+        $response = wp_remote_get($url, $args);
+
+        if (is_wp_error($response) && strpos($response->get_error_message(), 'cURL error 28') !== false) {
+            // Retry once after a short delay
+            sleep(60);
+            $response = wp_remote_get($url, $args);
+        }
+
+        return $response;
+    }
 }
 
 $GLOBALS['beech_healthcheck'] = new Beech_Healthcheck();
 $GLOBALS['beech_healthcheck']->init();
+    
