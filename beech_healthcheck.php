@@ -296,6 +296,7 @@ class Beech_Healthcheck {
         $response = wp_remote_get($url, $args);
 
         if (is_wp_error($response) && strpos($response->get_error_message(), 'cURL error 28') !== false) {
+            error_log("[BHC] Failed to fetch, will retry, for $url: " . $response->get_error_message());
             // Retry once after a short delay
             sleep(60);
             $response = wp_remote_get($url, $args);
