@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Beech Healthcheck Collector
  * Description: Collects health data from remote WordPress sites and logs it for monitoring.
- * Version: 0.5
+ * Version: 0.6
  * Author: Josh Wayman | Beech Agency
  * Author URI: https://beech.agency
  */
@@ -285,7 +285,7 @@ class Beech_Healthcheck {
     }
 
     /**
-     * Fetch a URL with retry on cURL error 28.
+     * Fetch a URL with retry on errors.
      *
      * @param string $url
      * @param int $timeout
@@ -297,16 +297,27 @@ class Beech_Healthcheck {
                 'Cache-Control' => 'no-cache',
                 'Pragma' => 'no-cache',
             ],
-            'timeout' => $timeout
+            'timeout' => $timeout,
+            'sslverify' => false  // Ignore SSL certificate mismatches (cURL error 60)
         ];
 
-        $response = wp_remote_get($url, $args);
+        $max_retries = 5;
+        $retry_delay = 120; // 2 minutes
 
-        if (is_wp_error($response) && strpos($response->get_error_message(), 'cURL error 28') !== false) {
-            error_log("[BHC] Failed to fetch, will retry, for $url: " . $response->get_error_message());
-            // Retry once after a short delay
-            sleep(60);
+        for ($attempt = 1; $attempt <= $max_retries; $attempt++) {
             $response = wp_remote_get($url, $args);
+
+            if (!is_wp_error($response)) {
+                return $response;
+            }
+
+            // If this is not the last attempt, wait and retry
+            if ($attempt < $max_retries) {
+                error_log("[BHC] Attempt $attempt failed for $url: " . $response->get_error_message() . ". Retrying in {$retry_delay} seconds.");
+                sleep($retry_delay);
+            } else {
+                error_log("[BHC] All $max_retries attempts failed for $url: " . $response->get_error_message());
+            }
         }
 
         return $response;
